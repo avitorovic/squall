@@ -183,7 +183,7 @@ public class ThetaTPCH7Plan {
 
 
        //-------------------------------------------------------------------------------------
-       ArrayList<Integer> hashLineitem = new ArrayList<Integer>(Arrays.asList(2));
+        ArrayList<Integer> hashLineitem = new ArrayList<Integer>(Arrays.asList(2));
 
         SelectionOperator selectionLineitem = new SelectionOperator(
                 new BetweenPredicate(
@@ -232,7 +232,7 @@ public class ThetaTPCH7Plan {
     		L_S_Njoin = new ThetaJoinComponent(
             relationLineitem,
             S_Njoin,
-            _queryPlan).setProjection(new ProjectionOperator(new int[]{5, 0, 1, 3}))
+            _queryPlan).setProjection(new ProjectionOperator(new int[]{4, 0, 1, 3}))
             .setJoinPredicate(L_S_N_comp);
 
         //-------------------------------------------------------------------------------------

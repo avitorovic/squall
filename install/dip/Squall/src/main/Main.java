@@ -136,8 +136,6 @@ public class Main {
                 queryPlan = new TPCH5Plan(dataPath, extension, conf).getQueryPlan();
             }else if(queryName.equalsIgnoreCase("TPCH7")){
                 queryPlan = new TPCH7Plan(dataPath, extension, conf).getQueryPlan();
-            }else if(queryName.equalsIgnoreCase("TPCH7_Theta")){
-                queryPlan = new ThetaTPCH7Plan(dataPath, extension, conf).getQueryPlan();
             }else if(queryName.equalsIgnoreCase("TPCH8")){
                 queryPlan = new TPCH8Plan(dataPath, extension, conf).getQueryPlan();
             }else if(queryName.equalsIgnoreCase("TPCH9")){
@@ -146,6 +144,8 @@ public class Main {
                 queryPlan = new TPCH10Plan(dataPath, extension, conf).getQueryPlan();
             }else if (queryName.equalsIgnoreCase("TestTheta")){
             	queryPlan = new TestThetaJoin(dataPath, extension, conf).getQueryPlan();
+            }else if (queryName.equalsIgnoreCase("TPCH7_Theta")){
+            	queryPlan = new ThetaTPCH7Plan(dataPath, extension, conf).getQueryPlan();
             }
             // ... this line
 

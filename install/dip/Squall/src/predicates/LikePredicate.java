@@ -37,8 +37,8 @@ public  class LikePredicate implements Predicate {
 
     @Override
     public boolean test(List<String> firstTupleValues, List<String> secondTupleValues){
-        String val1 = _ve1.eval(firstTupleValues, secondTupleValues);
-        String val2 = _ve2.eval(firstTupleValues, secondTupleValues);
+        String val1 = _ve1.eval(firstTupleValues);
+        String val2 = _ve2.eval(secondTupleValues);
         return val1.contains(val2);    }
 
     @Override

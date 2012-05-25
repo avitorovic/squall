@@ -50,6 +50,10 @@ public class HashIndex<KeyType> implements Index<KeyType> {
 		idsList.add(row_id);
 		
 	}
+	
+	public String toString(){
+		return _index.toString();
+	}
 
 	
 

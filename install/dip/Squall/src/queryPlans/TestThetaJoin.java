@@ -41,7 +41,7 @@ public class TestThetaJoin {
             
             ColumnReference colNation = new ColumnReference(_ic, 2);
             ColumnReference colRegion = new ColumnReference(_ic, 0);
-            ComparisonPredicate comp = new ComparisonPredicate(ComparisonPredicate.NONEQUAL_OP, colNation, colRegion);
+            ComparisonPredicate comp = new ComparisonPredicate(ComparisonPredicate.EQUAL_OP, colNation, colRegion);
             ThetaJoinComponent NATION_REGIONjoin = new ThetaJoinComponent(
                     relationNation,
                     relationRegion,

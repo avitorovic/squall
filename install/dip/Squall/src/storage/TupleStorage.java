@@ -23,7 +23,10 @@ public class TupleStorage implements Serializable {
 		_lastId = -1;
 	}
 	
-	
+	public void copy(TupleStorage t){
+		_storage.putAll(t._storage);
+		_lastId = t._lastId;
+	}
 	
 	public long insert(String tuple)
 	{
