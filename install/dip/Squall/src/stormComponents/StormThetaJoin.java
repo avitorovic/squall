@@ -1,13 +1,10 @@
 package stormComponents;
 
 import backtype.storm.Config;
-import indexes.Index;
+import thetajoin.indexes.Index;
 
 import java.util.ArrayList;
 import java.util.Map;
-
-
-
 
 import utilities.MyUtilities;
 
@@ -25,8 +22,8 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 
 
-import matrixMapping.Matrix;
-import matrixMapping.OptimalPartition;
+import thetajoin.matrixMapping.Matrix;
+import thetajoin.matrixMapping.OptimalPartition;
 import operators.AggregateOperator;
 import operators.ChainOperator;
 import operators.DistinctOperator;
@@ -34,7 +31,6 @@ import operators.Operator;
 import operators.ProjectionOperator;
 import operators.SelectionOperator;
 import utilities.SystemParameters;
-import storage.SquallStorage;
 import storage.TupleStorage;
 
 import org.apache.log4j.Logger;
@@ -48,7 +44,7 @@ import visitors.PredicateUpdateIndexesVisitor;
 
 public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComponent {
 	private static final long serialVersionUID = 1L;
-	private static Logger LOG = Logger.getLogger(StormDstJoin.class);
+	private static Logger LOG = Logger.getLogger(StormThetaJoin.class);
 
 	private int _hierarchyPosition=INTERMEDIATE;
 
@@ -80,10 +76,6 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 	private List<Integer> _operatorForIndexes;
 	private List<Object> _typeOfValueIndexed;
 	private boolean _existIndexes = false;
-	
-
-	//for load-balancing
-	private List<String> _fullHashList;
 
 	//for No ACK: the total number of tasks of all the parent compoonents
 	private int _numRemainingParents;
@@ -107,7 +99,6 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 			int hierarchyPosition,
 			boolean printOut,
 			long batchOutputMillis,
-			List<String> fullHashList,
 			TopologyBuilder builder,
 			TopologyKiller killer,
 			Config conf) {
@@ -119,7 +110,6 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 		
 		int firstCardinality=SystemParameters.getInt(conf, firstEmitter.getName()+"_CARD");
 		int secondCardinality=SystemParameters.getInt(conf, secondEmitter.getName()+"_CARD");
-
 
 		int parallelism = SystemParameters.getInt(conf, _componentName+"_PAR");
 
@@ -135,7 +125,6 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 
 		_hierarchyPosition = hierarchyPosition;
 
-		_fullHashList = fullHashList;
 		_ID=MyUtilities.getNextTopologyId();
 		InputDeclarer currentBolt = builder.setBolt(Integer.toString(_ID), this, parallelism);
 		
@@ -183,6 +172,7 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 
 	@Override
 	public void execute(Tuple stormTupleRcv) {
+		//System.out.println("exec"+stormTupleRcv.getString(1));
 		if(_firstTime && MyUtilities.isBatchOutputMode(_batchOutputMillis)){
 			_periodicBatch = new PeriodicBatchSend(_batchOutputMillis, this);
 			_firstTime = false;
@@ -236,8 +226,15 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 		List<String> valuesToApplyOnIndex = null;
 		
 		if(_existIndexes){
+		//	System.out.println("TupleSource: "+stormTupleRcv.getString(1));
+			
 			valuesToApplyOnIndex = updateIndexes(stormTupleRcv, affectedIndexes, row_id);
+		
+			//System.out.println("IndexAfterUp: "+affectedIndexes);
 		}
+		
+	//	System.out.println("Index aff:"+ affectedIndexes);
+	//	System.out.println("Index opp:"+ oppositeIndexes);
 
 		performJoin( stormTupleRcv,
 				inputTupleString, 
@@ -273,8 +270,9 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 
 		List<String> valuesToIndex = new ArrayList<String>(visitor._valuesToIndex);
 		List<Object> typesOfValuesToIndex = new ArrayList<Object>(visitor._typesOfValuesToIndex);
-System.out.println("values----"+valuesToIndex);
-System.out.println("types----"+typesOfValuesToIndex);
+		
+		//System.out.println("indexed: "+valuesToIndex);
+		
 		for(int i=0; i<affectedIndexes.size(); i++){
 			if(typesOfValuesToIndex.get(i) instanceof Integer){
 				affectedIndexes.get(i).put(Integer.parseInt(valuesToIndex.get(i)), row_id);
@@ -300,18 +298,24 @@ System.out.println("types----"+typesOfValuesToIndex);
 			List<Index> oppositeIndexes,
 			List<String> valuesToApplyOnIndex,
 			TupleStorage oppositeStorage){
-
+		
+	//	System.out.println("Storage opp:"+oppositeStorage);
+		
+		
 		TupleStorage tuplesToJoin = new TupleStorage();
 		selectTupleToJoin(oppositeStorage, oppositeIndexes, isFromFirstEmitter, valuesToApplyOnIndex, tuplesToJoin);
-		System.out.println("list"+tuplesToJoin);
+		//System.out.println("Selected Storage "+tuplesToJoin);
 		join(stormTupleRcv, inputTupleString, isFromFirstEmitter, tuplesToJoin);
+		//System.out.println("--------------------------------");
 	}
 	
 	private void selectTupleToJoin(TupleStorage oppositeStorage,
 			List<Index> oppositeIndexes, boolean isFromFirstEmitter,
 			List<String> valuesToApplyOnIndex, TupleStorage tuplesToJoin){
 		
-		System.out.println("valuetoApply"+valuesToApplyOnIndex);
+		
+//System.out.println("OppositeIndexes in function"+ oppositeIndexes);
+//System.out.println("valuesSearch "+valuesToApplyOnIndex);
 		
 		if(!_existIndexes ){
 			tuplesToJoin = oppositeStorage;
@@ -368,11 +372,11 @@ System.out.println("types----"+typesOfValuesToIndex);
 			*/
 			Index currentOpposIndex = oppositeIndexes.get(i);
 			String value = valuesToApplyOnIndex.get(i);
-			int currentOperator = -1;
-			System.out.println("Index:"+currentOpposIndex);
+			int currentOperator = _operatorForIndexes.get(i);
+			
 			// Switch inequality operator if the tuple coming is from the other relation
 			if (isFromFirstEmitter){
-				int operator = _operatorForIndexes.get(i);
+				int operator = currentOperator;
 				
 				if (operator == ComparisonPredicate.GREATER_OP){
 					currentOperator = ComparisonPredicate.LESS_OP;
@@ -389,10 +393,12 @@ System.out.println("types----"+typesOfValuesToIndex);
 				}
 				
 			}
-			System.out.println("typeIndexed:"+_typeOfValueIndexed.get(i));
+			
+	//		System.out.println("value "+value);
+	//		System.out.println("operator "+currentOperator);
+			
 			// Get the values from the index (check type first)
 			if(_typeOfValueIndexed.get(i) instanceof Integer){
-				System.out.println("INT");
 				currentRowIds = currentOpposIndex.getValues(Integer.parseInt(value), currentOperator );
 			}else if(_typeOfValueIndexed.get(i) instanceof Double){
 				currentRowIds = currentOpposIndex.getValues(Double.parseDouble(value), currentOperator );
@@ -401,9 +407,10 @@ System.out.println("types----"+typesOfValuesToIndex);
 			}else{
 				throw new RuntimeException("non supported type");
 			}
-				
 			
-			System.out.println("currentIDS:"+currentRowIds);
+		//	System.out.println("output:"+currentRowIds);
+		//	System.out.println(".................");
+				
 			
 			// Compute the intersection
 			// TODO: Search only within the ids that are in rowIds from previous join conditions
@@ -496,6 +503,7 @@ System.out.println("types----"+typesOfValuesToIndex);
 			return;
 		}
 		_numSentTuples++;
+	//	System.out.println("JOIN");
 		printTuple(tuple);
 
 		if(MyUtilities.isSending(_hierarchyPosition, _batchOutputMillis)){

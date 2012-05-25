@@ -108,7 +108,7 @@ public class StormDataSource extends BaseRichSpout implements StormEmitter, Stor
 
 		builder.setSpout(Integer.toString(_ID), this, parallelism);
 		if(MyUtilities.isAckEveryTuple(conf)){
-			killer.registerComponent(this, 1);
+			killer.registerComponent(this, parallelism);
 		}
 	}
 
@@ -128,7 +128,11 @@ public class StormDataSource extends BaseRichSpout implements StormEmitter, Stor
 			}
 
 			String line = readLine();
+			/*if(line==null){
+				System.out.println("---"+line);
+			}*/
 			if(line==null) {
+				//System.out.println("END");
 				_hasReachedEOF=true;
 				return;
 			}
@@ -247,9 +251,13 @@ public class StormDataSource extends BaseRichSpout implements StormEmitter, Stor
 
 	@Override
 		public void ack(Object msgId) {
-			_pendingTuples--;	    
+		
+			_pendingTuples--;
+			//System.out.println("3333333333333333333333333333");
 			if (_hasReachedEOF) {
+			//	System.out.println("pendaing-----------------"+_pendingTuples);
 				if (_pendingTuples == 0) {
+					
 					if(MyUtilities.isAckEveryTuple(_conf)){
 						_collector.emit(SystemParameters.EOF_STREAM, new Values(SystemParameters.EOF));
 					}else{
