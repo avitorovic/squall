@@ -172,7 +172,6 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 
 	@Override
 	public void execute(Tuple stormTupleRcv) {
-		//System.out.println("exec"+stormTupleRcv.getString(1));
 		if(_firstTime && MyUtilities.isBatchOutputMode(_batchOutputMillis)){
 			_periodicBatch = new PeriodicBatchSend(_batchOutputMillis, this);
 			_firstTime = false;
@@ -226,15 +225,8 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 		List<String> valuesToApplyOnIndex = null;
 		
 		if(_existIndexes){
-		//	System.out.println("TupleSource: "+stormTupleRcv.getString(1));
-			
 			valuesToApplyOnIndex = updateIndexes(stormTupleRcv, affectedIndexes, row_id);
-		
-			//System.out.println("IndexAfterUp: "+affectedIndexes);
 		}
-		
-	//	System.out.println("Index aff:"+ affectedIndexes);
-	//	System.out.println("Index opp:"+ oppositeIndexes);
 
 		performJoin( stormTupleRcv,
 				inputTupleString, 
@@ -270,9 +262,7 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 
 		List<String> valuesToIndex = new ArrayList<String>(visitor._valuesToIndex);
 		List<Object> typesOfValuesToIndex = new ArrayList<Object>(visitor._typesOfValuesToIndex);
-		
-		//System.out.println("indexed: "+valuesToIndex);
-		
+
 		for(int i=0; i<affectedIndexes.size(); i++){
 			if(typesOfValuesToIndex.get(i) instanceof Integer){
 				affectedIndexes.get(i).put(Integer.parseInt(valuesToIndex.get(i)), row_id);
@@ -298,24 +288,16 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 			List<Index> oppositeIndexes,
 			List<String> valuesToApplyOnIndex,
 			TupleStorage oppositeStorage){
-		
-	//	System.out.println("Storage opp:"+oppositeStorage);
-		
-		
+
 		TupleStorage tuplesToJoin = new TupleStorage();
 		selectTupleToJoin(oppositeStorage, oppositeIndexes, isFromFirstEmitter, valuesToApplyOnIndex, tuplesToJoin);
-		//System.out.println("Selected Storage "+tuplesToJoin);
 		join(stormTupleRcv, inputTupleString, isFromFirstEmitter, tuplesToJoin);
-		//System.out.println("--------------------------------");
 	}
 	
 	private void selectTupleToJoin(TupleStorage oppositeStorage,
 			List<Index> oppositeIndexes, boolean isFromFirstEmitter,
 			List<String> valuesToApplyOnIndex, TupleStorage tuplesToJoin){
 		
-		
-//System.out.println("OppositeIndexes in function"+ oppositeIndexes);
-//System.out.println("valuesSearch "+valuesToApplyOnIndex);
 		
 		if(!_existIndexes ){
 			tuplesToJoin = oppositeStorage;
@@ -373,7 +355,7 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 			Index currentOpposIndex = oppositeIndexes.get(i);
 			String value = valuesToApplyOnIndex.get(i);
 			int currentOperator = _operatorForIndexes.get(i);
-			
+
 			// Switch inequality operator if the tuple coming is from the other relation
 			if (isFromFirstEmitter){
 				int operator = currentOperator;
@@ -393,12 +375,10 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 				}
 				
 			}
-			
-	//		System.out.println("value "+value);
-	//		System.out.println("operator "+currentOperator);
-			
+
 			// Get the values from the index (check type first)
 			if(_typeOfValueIndexed.get(i) instanceof Integer){
+				
 				currentRowIds = currentOpposIndex.getValues(Integer.parseInt(value), currentOperator );
 			}else if(_typeOfValueIndexed.get(i) instanceof Double){
 				currentRowIds = currentOpposIndex.getValues(Double.parseDouble(value), currentOperator );
@@ -407,10 +387,8 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 			}else{
 				throw new RuntimeException("non supported type");
 			}
-			
-		//	System.out.println("output:"+currentRowIds);
-		//	System.out.println(".................");
 				
+			
 			
 			// Compute the intersection
 			// TODO: Search only within the ids that are in rowIds from previous join conditions
@@ -503,7 +481,6 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 			return;
 		}
 		_numSentTuples++;
-	//	System.out.println("JOIN");
 		printTuple(tuple);
 
 		if(MyUtilities.isSending(_hierarchyPosition, _batchOutputMillis)){

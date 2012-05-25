@@ -232,7 +232,7 @@ public class ThetaTPCH7Plan {
     		L_S_Njoin = new ThetaJoinComponent(
             relationLineitem,
             S_Njoin,
-            _queryPlan).setProjection(new ProjectionOperator(new int[]{4, 0, 1, 3}))
+            _queryPlan).setProjection(new ProjectionOperator(new int[]{5, 0, 1, 3}))
             .setJoinPredicate(L_S_N_comp);
 
         //-------------------------------------------------------------------------------------
@@ -276,13 +276,13 @@ public class ThetaTPCH7Plan {
             _queryPlan).setSelection(so)
                        .setAggregation(agg).setJoinPredicate(N_C_O_L_S_N_comp);
         //-------------------------------------------------------------------------------------
-  /*      AggregateOperator overallAgg =
+        AggregateOperator overallAgg =
                     new AggregateSumOperator(_doubleConv, new ColumnReference(_doubleConv, 1), conf)
                         .setGroupByColumns(Arrays.asList(0));
 
         _queryPlan.setOverallAggregation(overallAgg);
 
-  */  }
+    }
 
     public QueryPlan getQueryPlan() {
         return _queryPlan;

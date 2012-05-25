@@ -52,8 +52,6 @@ public class HashIndex<KeyType> implements Index<KeyType> {
 	}
 
 	
-	public String toString(){
-		return _index.toString();
-	}
+
 
 }
