@@ -70,13 +70,25 @@ public class ValueSpecification<T extends Comparable<T>> implements ValueExpress
 		// TODO Auto-generated method stub
 		
 	}
-	
+	/*
 	public void inverseNumber()
 	{
 		if ( _wrapper instanceof NumericConversion )
 		{
 			NumericConversion makis = (NumericConversion)_wrapper;
 			double temp = makis.toDouble((Number) _constant);
+			_constant = (T) makis.fromDouble(1.0/temp);
+		}
+	}*/
+	
+	public void inverseNumber()
+	{
+		if ( _wrapper instanceof NumericConversion )
+		{
+			NumericConversion makis = (NumericConversion)_wrapper;
+			//double temp = makis.toDouble((Number) _constant);
+			double val = (double)((Number)_constant).doubleValue();
+			double temp = makis.toDouble(new Double(val));
 			_constant = (T) makis.fromDouble(1.0/temp);
 		}
 	}

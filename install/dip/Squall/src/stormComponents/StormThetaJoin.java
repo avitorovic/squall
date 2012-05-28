@@ -159,13 +159,15 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 		PredicateAnalyser predicateAnalyser = new PredicateAnalyser();
 		
 		Predicate modifiedPredicate = predicateAnalyser.analyse(_joinPredicate);
+		System.out.println("--"+modifiedPredicate);
 		
 		if (modifiedPredicate == _joinPredicate) { //cannot create index
 			_existIndexes = false;
 		} else {
-		//	_joinPredicate = modifiedPredicate;
-		//	createIndexes();
-		//	_existIndexes = true;
+			System.out.println("index-----------------");
+			_joinPredicate = modifiedPredicate;
+			createIndexes();
+			_existIndexes = true;
 		}
 
 	}
@@ -449,7 +451,7 @@ public class StormThetaJoin extends BaseRichBolt implements StormJoin, StormComp
 					// Cartesian product - Outputs all attributes
 					outputTuple = MyUtilities.createOutputTuple(firstTuple, secondTuple);
 				}
-
+//System.out.println(firstTuple+"--"+secondTuple);
 				applyOperatorsAndSend(stormTuple, outputTuple);
 
 			}

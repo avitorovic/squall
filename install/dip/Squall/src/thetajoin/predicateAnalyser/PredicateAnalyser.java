@@ -4,6 +4,7 @@ import conversion.*;
 import predicates.*;
 import expressions.*;
 
+
 import java.util.List;
 
 public class PredicateAnalyser {
@@ -17,16 +18,40 @@ public class PredicateAnalyser {
 
 	public PredicateAnalyser() {
 	}
+	
+	public Predicate analyse(Predicate toAnalyse)
+	{
+		List<Predicate> inner = toAnalyse.getInnerPredicates();		
+		if (toAnalyse instanceof AndPredicate)
+		{
+			return new AndPredicate(analyse(inner.get(0)), analyse(inner.get(1)));
+		}
+		else if (toAnalyse instanceof OrPredicate)
+		{
+			return new OrPredicate(analyse(inner.get(0)), analyse(inner.get(1)));			
+		}
+		else if (toAnalyse instanceof ComparisonPredicate)
+		{
+			return comparisonPredAnalyse(toAnalyse);
+		}
+		return toAnalyse;
+	}
 
-	public Predicate analyse(Predicate toAnalyse) {
+	public Predicate comparisonPredAnalyse(Predicate toAnalyse) {
 		if (!(toAnalyse instanceof ComparisonPredicate))
-			return toAnalyse;
+			return toAnalyse;		
 
-		ComparisonPredicate compToAnalyse = (ComparisonPredicate) toAnalyse;
-
-		// Transform to Double
-
+		// Check if is Double or Integer
+		ComparisonPredicate compToAnalyse = (ComparisonPredicate) toAnalyse;		
 		List<ValueExpression> followUps = compToAnalyse.getExpressions();
+//		if (!(followUps.get(0).getType() instanceof IntegerConversion) || !(followUps.get(0).getType() instanceof DoubleConversion))
+//			return toAnalyse;
+		
+		// if one of the previous change to Double
+		toAnalyse = getSameForDouble(toAnalyse);
+		
+		compToAnalyse = (ComparisonPredicate) toAnalyse;
+		followUps = compToAnalyse.getExpressions();
 
 		ValueExpression leftPart = null;
 		try {
@@ -57,6 +82,7 @@ public class PredicateAnalyser {
 		if (Parameter[1] == null)
 			Parameter[1] = new ValueSpecification<Double>(numConv, 1.0);
 			
+		
 		Parameter[0].inverseNumber();
 		ValueExpression fullClean = null;
 		if (CleanPart[0] != null)
@@ -83,9 +109,9 @@ public class PredicateAnalyser {
 		ValueExpression finalB = new Multiplication<Double>(numConv, Parameter[0], fullClean);
 		finalB = combine(null, 0, finalB);
 		
+		
 		ValueExpression withVariable = new Multiplication<Double>(numConv, finalA, Variable[1]);
 		ValueExpression finalRightPart = new Addition<Double>(numConv, withVariable, finalB);
-		
 		
 		Predicate finalPred;
 		if (Parameter[0].isNegative())
@@ -383,7 +409,7 @@ public class PredicateAnalyser {
 		ValueExpression left = changeToDouble(followUps.get(0));
 		ValueExpression right = changeToDouble(followUps.get(1));
 
-		Predicate finalPred = new ComparisonPredicate(compPred.getOperator(false), left, right);
+		Predicate finalPred = new ComparisonPredicate<Double>(compPred.getOperator(false), left, right);
 		return finalPred;
 	}
 	
@@ -392,23 +418,35 @@ public class PredicateAnalyser {
 		
 		if (other instanceof ColumnReference)
 		{
-			
+			return new ColumnReference<Double>(numConv, ((ColumnReference) other).getColumnIndex());
 		}
 		else if (other instanceof ValueSpecification)
 		{
-			
+			IntegerConversion change;
+			if (other.getType() instanceof IntegerConversion)
+			{
+				change = (IntegerConversion)other.getType();
+				double temp = change.toDouble((Integer)other.eval(null));
+				ValueSpecification tempVS = new ValueSpecification<Double>(numConv, temp);
+				return tempVS;
+			}
+			else
+				return other;
 		}
 		else if (other instanceof Addition)
 		{
-			
+			List<ValueExpression> followUps = other.getInnerExpressions();
+			return new Addition<Double>(numConv, changeToDouble(followUps.get(0)),changeToDouble(followUps.get(1)));
 		}
 		else if (other instanceof Subtraction)
-		{
-			
+		{			
+			List<ValueExpression> followUps = other.getInnerExpressions();
+			return new Subtraction<Double>(numConv, changeToDouble(followUps.get(0)),changeToDouble(followUps.get(1)));			
 		}
 		else if (other instanceof Multiplication)
-		{
-			
+		{		
+			List<ValueExpression> followUps = other.getInnerExpressions();
+			return new Multiplication<Double>(numConv, changeToDouble(followUps.get(0)),changeToDouble(followUps.get(1)));			
 		}
 		return null;
 	}
